@@ -1,38 +1,37 @@
-
 from typing import Final
 
 
-CLINICAL_CATEGORIES: Final[tuple[str, ...]] = (
-    "respiratorio",
-    "gastrointestinal",
-    "cardiovascular",
-    "neurologico",
-    "metabolico",
-    "infeccioso",
-    "musculoesqueletico",
-    "dermatologico",
-    "outros",
+DISEASE_LABELS: Final[tuple[str, ...]] = (
+    "Acne",
+    "Arthritis",
+    "Bronchial Asthma",
+    "Cervical spondylosis",
+    "Chicken pox",
+    "Common Cold",
+    "Dengue",
+    "Dimorphic Hemorrhoids",
+    "Fungal infection",
+    "Hypertension",
+    "Impetigo",
+    "Jaundice",
+    "Malaria",
+    "Migraine",
+    "Pneumonia",
+    "Psoriasis",
+    "Typhoid",
+    "Varicose Veins",
+    "allergy",
+    "diabetes",
+    "drug reaction",
+    "gastroesophageal reflux disease",
+    "peptic ulcer disease",
+    "urinary tract infection",
 )
-
-
-CATEGORY_DESCRIPTIONS: Final[dict[str, str]] = {
-    "respiratorio": "Condições relacionadas ao sistema respiratório.",
-    "gastrointestinal": "Condições relacionadas ao sistema digestivo.",
-    "cardiovascular": "Condições relacionadas ao coração e à circulação.",
-    "neurologico": "Condições relacionadas ao sistema nervoso.",
-    "metabolico": "Condições relacionadas ao metabolismo.",
-    "infeccioso": "Condições associadas a agentes infecciosos.",
-    "musculoesqueletico": (
-        "Condições relacionadas aos músculos, ossos e articulações."
-    ),
-    "dermatologico": "Condições relacionadas à pele e seus anexos.",
-    "outros": "Condições que não se enquadram nas demais categorias.",
-}
 
 
 LABEL_TO_ID: Final[dict[str, int]] = {
     label: index
-    for index, label in enumerate(CLINICAL_CATEGORIES)
+    for index, label in enumerate(DISEASE_LABELS)
 }
 
 
@@ -42,68 +41,64 @@ ID_TO_LABEL: Final[dict[int, str]] = {
 }
 
 
-NUM_CLASSES: Final[int] = len(CLINICAL_CATEGORIES)
+NUM_CLASSES: Final[int] = len(DISEASE_LABELS)
 
 
 def normalize_label(label: str) -> str:
-    """Normaliza uma categoria para comparação."""
+    """Normaliza o rótulo para comparação."""
     if not isinstance(label, str):
-        raise TypeError("A categoria deve ser uma string.")
+        raise TypeError("O rótulo deve ser uma string.")
 
-    return label.strip().lower()
+    return label.strip().casefold()
 
 
 def get_label_id(label: str) -> int:
-    """Retorna o identificador numérico de uma categoria."""
+    """Retorna o ID numérico correspondente à doença."""
     normalized_label = normalize_label(label)
 
-    if normalized_label not in LABEL_TO_ID:
-        raise ValueError(
-            f"Categoria desconhecida: {label!r}. "
-            f"Categorias disponíveis: {', '.join(CLINICAL_CATEGORIES)}"
-        )
+    for disease, label_id in LABEL_TO_ID.items():
+        if normalize_label(disease) == normalized_label:
+            return label_id
 
-    return LABEL_TO_ID[normalized_label]
+    raise ValueError(
+        f"Doença desconhecida: {label!r}. "
+        f"Classes disponíveis: {', '.join(DISEASE_LABELS)}"
+    )
 
 
 def get_label_name(label_id: int) -> str:
-    """Retorna o nome da categoria a partir do identificador."""
+    """Retorna o nome da doença correspondente ao ID."""
     if isinstance(label_id, bool) or not isinstance(label_id, int):
-        raise TypeError("O identificador da categoria deve ser um inteiro.")
+        raise TypeError("O ID da doença deve ser um número inteiro.")
 
     if label_id not in ID_TO_LABEL:
         raise ValueError(
-            f"Identificador inválido: {label_id}. "
+            f"ID inválido: {label_id}. "
             f"Valores permitidos: 0 a {NUM_CLASSES - 1}."
         )
 
     return ID_TO_LABEL[label_id]
 
 
-def get_category_description(label: str) -> str:
-    """Retorna a descrição de uma categoria."""
-    normalized_label = normalize_label(label)
-
-    if normalized_label not in CATEGORY_DESCRIPTIONS:
-        raise ValueError(f"Categoria desconhecida: {label!r}.")
-
-    return CATEGORY_DESCRIPTIONS[normalized_label]
-
-
 def validate_labels(labels: list[str]) -> None:
-    """Verifica se todas as categorias do dataset são válidas."""
+    """Verifica se todos os rótulos pertencem às classes do dataset."""
     if not labels:
-        raise ValueError("A lista de categorias não pode estar vazia.")
+        raise ValueError("A lista de rótulos não pode estar vazia.")
+
+    valid_labels = {
+        normalize_label(label)
+        for label in DISEASE_LABELS
+    }
 
     invalid_labels = sorted(
         {
             normalize_label(label)
             for label in labels
-            if normalize_label(label) not in LABEL_TO_ID
+            if normalize_label(label) not in valid_labels
         }
     )
 
     if invalid_labels:
         raise ValueError(
-            f"Categorias incompatíveis com o modelo: {invalid_labels}"
+            f"Rótulos incompatíveis com o modelo: {invalid_labels}"
         )
