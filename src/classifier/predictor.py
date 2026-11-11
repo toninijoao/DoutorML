@@ -7,6 +7,7 @@ from transformers import AutoTokenizer
 
 from src.classifier.labels import NUM_CLASSES, ID_TO_LABEL
 from src.classifier.model import create_model
+from src.classifier.translations import translate_label
 
 
 MODEL_PATH = Path("models/checkpoints/doutorml-distilbert")
@@ -63,7 +64,6 @@ class SymptomPredictor:
         }
 
         outputs = self.model(**inputs)
-
         probabilities = F.softmax(outputs.logits, dim=1)
 
         top_probabilities, top_indices = torch.topk(
@@ -79,9 +79,10 @@ class SymptomPredictor:
             top_indices[0],
         ):
             label_id = class_id.item()
+            original_label = ID_TO_LABEL[label_id]
 
             predictions.append({
-                "label": ID_TO_LABEL[label_id],
+                "label": translate_label(original_label),
                 "probability": round(probability.item(), 4),
             })
 
@@ -90,9 +91,7 @@ class SymptomPredictor:
 
 if __name__ == "__main__":
     predictor = SymptomPredictor()
-
     relato = input("Descreva os sintomas: ")
-
     predictions = predictor.predict(relato)
 
     print("\nClassificações mais prováveis:\n")
